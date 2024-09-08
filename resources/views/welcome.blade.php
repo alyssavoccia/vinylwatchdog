@@ -89,7 +89,7 @@
                             <p class="max-w-4xl mt-6 text-center text-white dark:text-gray-300">Join thousands of vinyl lovers who are already tracking prices and discovering great deals.</p>
                     
                             <div class="inline-flex w-full mt-6 sm:w-auto">
-                                <a href="{{ route('register') }}" wire:navigate class="inline-flex items-center justify-center w-full px-6 py-2 text-gray-900 duration-300 bg-green-300 rounded-lg hover:bg-green-200 focus:ring-0">Get Started</a>
+                                <a href="{{ route('login') }}" wire:navigate class="inline-flex items-center justify-center w-full px-6 py-2 text-gray-900 duration-300 bg-green-300 rounded-lg hover:bg-green-200 focus:ring-0">Get Started</a>
                             </div>
                         </div>
                     </section>

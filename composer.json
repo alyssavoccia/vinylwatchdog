@@ -11,6 +11,7 @@
         "kamermans/guzzle-oauth2-subscriber": "^1.1",
         "laravel/breeze": "^2.1",
         "laravel/framework": "^11.9",
+        "laravel/socialite": "^5.16",
         "laravel/tinker": "^2.9",
         "livewire/livewire": "^3.4",
         "livewire/volt": "^1.0"
