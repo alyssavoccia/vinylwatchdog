@@ -3,7 +3,7 @@
    <div class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
       @foreach ($topVinyl as $vinyl)
          <div class="flex flex-col my-10 w-full rounded-md bg-white shadow-md">
-            <a href="{{ $vinyl['link'] }}" target="_blank">
+            <a href="{{ url('browse/' . $vinyl['id'] . '/' . str_replace(' ', '-', strtolower($vinyl['title']))) }}">
                <img class="w-full rounded-t-lg object-cover" src="{{ $vinyl['cover_image'] }}" alt="product image" />
             </a>
             <div class="flex flex-col h-full mt-4 px-5 pb-5">
@@ -13,9 +13,9 @@
                <div class="flex justify-between items-end mt-auto">
                   <p>
                      <span class="text-sm">From </span>
-                     <span class="text-xl font-bold text-slate-900">${{ number_format($vinyl['lowest_price']['value'], 2, '.', ',') }}</span>
+                     <span class="text-xl font-bold text-slate-900">${{ number_format($vinyl['lowest_price'], 2, '.', ',') }}</span>
                   </p>
-                  <a href="https://amzn.to/3zaIbsI" class="rounded-md bg-green-700 px-6 py-2 text-center text-sm font-bold text-white hover:bg-green-600 focus:outline-none focus:ring-0 transition-all duration-150">View</a>
+                  <a href="{{ url('browse/' . $vinyl['id'] . '/' . str_replace(' ', '-', strtolower($vinyl['title']))) }}" class="rounded-md bg-green-700 px-6 py-2 text-center text-sm font-bold text-white hover:bg-green-600 focus:outline-none focus:ring-0 transition-all duration-150">View</a>
                </div>
             </div>
          </div>       

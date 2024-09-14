@@ -3,9 +3,13 @@
 namespace App\Livewire\Landing;
 
 use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Cache;
 use League\OAuth1\Client\Server\Server;
 use League\OAuth1\Client\Credentials\TokenCredentials;
 use Livewire\Component;
+use App\Models\VinylRecord;
+use App\Models\PriceHistory;
+
 use Illuminate\Support\Facades\Log;
 
 class TopCollectedVinyl extends Component {
@@ -23,52 +27,14 @@ class TopCollectedVinyl extends Component {
             'base_uri' => $this->baseUri,
         ]);
 
-        // $this->topVinyl = $this->getRandomVinyl();
-        $this->topVinyl = $this->getTestData();
+        // $this->setPriceHistory();
+        $this->getRandomVinyl();
+        // $this->getEbayTrending();
+        // Get first 4 from database in array
+        // $this->topVinyl = VinylRecord::take(4)->get()->toArray();
     }
 
-    public function getTestData() {
-        return [
-            [
-                'title' => 'Daft Punk - Random Access Memories',
-                'cover_image' => 'https://i.discogs.com/zFVZE4s0zSXUIM7OMl2UDckSq0zlopdHBHRz23zqMJk/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQ1NzAz/NjYtMTUzOTI5NTA5/Mi02MDg3LnBuZw.jpeg',
-                'link' => 'https://api.discogs.com/releases/4570366',
-                'lowest_price' => [
-                    'value' => 32.5,
-                    'currency' => 'USD',
-                ]
-            ],
-            [
-                'title' => 'Pink Floyd - The Dark Side Of The Moon',
-                'cover_image' => 'https://i.discogs.com/1fwskTLM6cfxbdNmBDJ8expl6wab0tEgxvuloLIqKh8/rs:fit/g:sm/q:90/h:596/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTkyODc4/MDktMTQ3OTc1MzIz/Ni05NjE3LmpwZWc.jpeg',
-                'link' => 'https://api.discogs.com/releases/9287809',
-                'lowest_price' => [
-                    'value' => 15.75,
-                    'currency' => 'USD',
-                ]
-            ],
-            [
-                'title' => 'Kendrick Lamar - Good Kid, M.A.A.d City',
-                'cover_image' => 'https://i.discogs.com/NlmkKrMlFUvKaaW5GUSKFRrMB1snZbF9Zx6_fMUsBtY/rs:fit/g:sm/q:90/h:588/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM5NzU5/NTMtMTU3MDQwNDUz/Ni01NDY1LmpwZWc.jpeg',
-                'link' => 'https://api.discogs.com/releases/3975953',
-                'lowest_price' => [
-                    'value' => 5.88,
-                    'currency' => 'USD',
-                ]
-            ],
-            [
-                'title' => 'Michael Jackson - Thriller',
-                'cover_image' => 'https://i.discogs.com/OQRwID3TvI5bMrPxrDgtFRftYhjZlkQ1FPE81xPOY5I/rs:fit/g:sm/q:90/h:602/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI5MTEy/OTMtMTU5NDI0NTgx/Mi03OTMxLmpwZWc.jpeg',
-                'link' => 'https://api.discogs.com/releases/2911293',
-                'lowest_price' => [
-                    'value' => 5.0,
-                    'currency' => 'USD',
-                ]
-            ]
-        ];
-    }
-
-    public function getRandomVinyl($limit = 4) {
+    public function getRandomVinyl() {
         $url = '/database/search';
         $params = [
             'query' => 'vinyl',
@@ -76,7 +42,8 @@ class TopCollectedVinyl extends Component {
             'sort' => 'have',
             'sort_order' => 'desc',
             'type' => 'release',
-            'per_page' => 4,
+            'year' => 2024,
+            'per_page' => 25,
             'page' => 1
         ];
     
@@ -93,26 +60,38 @@ class TopCollectedVinyl extends Component {
           $body = $response->getBody()->getContents();
     
           $data = json_decode($body, true);
-    
-          $finalVinylData = [];
-          if ($data['results']) {
+
+          if (isset($data['results'])) {
             foreach ($data['results'] as $item) {
-              $releaseId = $item['id'];
-              $lowestPrice = $this->getLowestPrice($releaseId);
+              $parts = explode('-', $item['title']);
+              $title = trim($parts[1]);
+              $artist = trim($parts[0]);
+              // Check if record is in the database by seeing if there is a name that is the same as the title
+              $record = VinylRecord::where('discogs_id', $item['id'])->first();
+
+              if (!$record) {
+                $lowestPrice = $this->getLowestPrice($item['id']);
+                $discogsInfo = $this->getDiscogsInfo($item['id']);
     
-              $finalVinylData[] = [
-                  'title' => $item['title'],
+                $record = VinylRecord::create([
+                  'discogs_id' => $item['id'],
+                  'title' => $title,
+                  'artist' => $artist,
+                  'genre' => $item['genre'][0] ?? null,
+                  'pressing' => $discogsInfo['pressing'] ?? null,
+                  'year' => $discogsInfo['year'] ?? null,
                   'cover_image' => $item['cover_image'],
-                  'link' => $item['resource_url'],
-                  'lowest_price' => $lowestPrice,
-              ];
+                  'discogs_link' => $discogsInfo['link'],
+                  'lowest_price' => $lowestPrice['value'],
+                  'lowest_price_currency' => $lowestPrice['currency'],
+                  'tracklist' => json_encode($discogsInfo['tracklist'])
+                ]);
+              }
             }
           }
-    
-          $finalVinylData = array_slice($finalVinylData, 0, $limit);
-
-          Log::info($finalVinylData);
-          return $finalVinylData ?? [];
+  
+          // Log::info($data['results']);
+          // return $finalVinylData ?? [];
         } catch (\Exception $e) {
           Log::error('Error fetching Discogs data: ' . $e->getMessage());
           return [];
@@ -131,13 +110,80 @@ class TopCollectedVinyl extends Component {
           ]);
     
           $data = json_decode($response->getBody()->getContents(), true);
-    
+          
           return $data['lowest_price'] ?? null;
         } catch (\Exception $e) {
           Log::error('Error fetching lowest price for release ' . $releaseId . ': ' . $e->getMessage());
           return null;
         }
       }
+
+      public function getDiscogsInfo($releaseId) {
+        $url = "/releases/$releaseId";
+        $response = $this->client->get($url, [
+          'headers' => [
+            'Authorization' => 'Discogs key=' . $this->consumerKey . ', secret=' . $this->consumerSecret,
+            'User-Agent' => 'VinylWatchdog/1.0'
+          ]
+        ]);
+
+        $data = json_decode($response->getBody()->getContents(), true);
+        $discogsInfo = [];
+
+        // Log::info('data: ' . print_r($data, true));
+        $variantPressing = '';
+
+        $variantFormat = $data['formats'] ?? null;
+        if ($variantFormat && is_array($variantFormat)) {
+            $variantFormat = $variantFormat[0];
+
+            // Loop through descriptions and keep everything that isn't LP or Album
+            foreach ($variantFormat['descriptions'] as $description) {
+                if (!in_array($description, ['LP', 'Album'])) {
+                    // If variantPressing is empty add it on, if not add a comma first
+                    $variantPressing .= $variantPressing ? ', ' . $description : $description;
+                }
+            }
+
+            // Check if there is text and add that onto variantPressing
+            if (isset($variantFormat['text'])) {
+                $variantPressing .= $variantPressing ? ', ' . $variantFormat['text'] : $variantFormat['text'];
+            }
+        }
+
+        $discogsInfo['pressing'] = $variantPressing;
+        $discogsInfo['year'] = $data['year'];
+        $discogsInfo['link'] = $data['uri'];
+
+        // Create tracklist with position and title
+        $tracklist = [];
+
+        foreach ($data['tracklist'] as $track) {
+          $tracklist[] = [
+            'position' => $track['position'],
+            'title' => $track['title'],
+            'duration' => $track['duration']
+          ];
+        }
+        
+        $discogsInfo['tracklist'] = $tracklist;
+
+        return $discogsInfo;
+      }
+
+    public function setPriceHistory() {
+      // Loop through all vinyl records and create a new price history entry
+      $vinylRecords = VinylRecord::all();
+
+      foreach ($vinylRecords as $vinylRecord) {
+          PriceHistory::create([
+            'vinyl_record_id' => $vinylRecord->id,
+            'source' => 'discogs',
+            'price' => $vinylRecord->lowest_price,
+            'currency' => $vinylRecord->lowest_price_currency
+          ]);
+      }
+    }
 
     public function render() {
         return view('livewire.landing.top-collected-vinyl');

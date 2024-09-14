@@ -13,12 +13,24 @@ return new class extends Migration
     {
         Schema::create('vinyl_records', function (Blueprint $table) {
             $table->id();
-            $table->string('discogs_id')->nullable();
-            $table->string('ebay_id')->nullable();
-            $table->string('amazon_id')->nullable();
-            $table->string('title');
-            $table->string('artist');
+            $table->string('discogs_id')->nullable()->index();
+            $table->string('ebay_id')->nullable()->index();
+            $table->string('amazon_id')->nullable()->index();
+            $table->string('title')->index();
+            $table->string('artist')->index();
+            $table->string('genre')->nullable();
+            $table->string('pressing')->nullable();
+            $table->string('year')->nullable();
+            $table->string('cover_image')->nullable();
+            $table->string('discogs_link')->nullable();
+            $table->string('ebay_link')->nullable();
+            $table->string('amazon_link')->nullable();
+            $table->decimal('lowest_price', 8, 2)->nullable()->index();
+            $table->string('lowest_price_currency', 3);
+            $table->json('tracklist')->nullable();
             $table->timestamps();
+
+            $table->index(['title', 'artist']); // Composite index
         });
     }
 

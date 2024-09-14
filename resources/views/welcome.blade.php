@@ -18,13 +18,7 @@
         <div class="bg-gray-50 text-black/50 dark:bg-black dark:text-white/50">
             <div class="min-h-screen flex flex-col">
                 <header class="container max-w-screen-xl mx-auto flex items-center justify-between">
-                    <div class="flex items-center">
-                        <img class="w-28" src="images/vinylWatchdogLogo.png" alt="VinylWatchdog logo" />
-                        <p class="text-xl text-gray-900 font-logo">VinylWatchdog</p>
-                    </div>
-                    @if (Route::has('login'))
-                        <livewire:welcome.navigation />
-                    @endif
+                    <livewire:layout.navigation />
                 </header>
                 <main>
                     {{-- HERO --}}
